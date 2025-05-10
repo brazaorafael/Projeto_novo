@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { dogBreeds } from "@/lib/dog-breeds"
 import { calculateMatch } from "@/lib/calculate-match"
 import { saveContact } from "../actions/contact-actions"
+import { getBreedersByBreedId } from "@/lib/breeders-service"
 
 export default function Resultados() {
   const searchParams = useSearchParams()
@@ -56,6 +57,45 @@ export default function Resultados() {
     setMatches(topMatches)
     setLoading(false)
   }, [searchParams.toString()]) // Usar searchParams.toString() como dependência
+
+  // Buscar criadores do banco de dados para cada raça
+  useEffect(() => {
+    async function fetchBreedersForMatches() {
+      if (matches.length > 0) {
+        const updatedMatches = [...matches]
+
+        for (let i = 0; i < updatedMatches.length; i++) {
+          const match = updatedMatches[i]
+          try {
+            const breeders = await getBreedersByBreedId(match.breed.id)
+            if (breeders.length > 0) {
+              // Atualizar os criadores da raça com os dados do banco
+              updatedMatches[i] = {
+                ...match,
+                breed: {
+                  ...match.breed,
+                  breeders: breeders.map((b) => ({
+                    id: b.id,
+                    name: b.name,
+                    location: b.location,
+                    website: b.website,
+                    instagram: b.instagram,
+                    active: b.active,
+                  })),
+                },
+              }
+            }
+          } catch (error) {
+            console.error(`Erro ao buscar criadores para raça ${match.breed.id}:`, error)
+          }
+        }
+
+        setMatches(updatedMatches)
+      }
+    }
+
+    fetchBreedersForMatches()
+  }, [matches])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -270,19 +310,61 @@ export default function Resultados() {
                   </TabsContent>
                   <TabsContent value="breeders" className="p-6">
                     <div className="space-y-4">
-                      {match.breed.breeders.map((breeder, idx) => (
-                        <div key={idx} className="border border-gray-200 rounded-lg p-4">
-                          <h3 className="font-medium text-gray-800">{breeder.name}</h3>
-                          <p className="text-sm text-gray-600 mt-1">{breeder.location}</p>
-                          <div className="mt-3 flex">
-                            <Button variant="outline" size="sm" asChild className="border-gray-300 text-gray-700">
-                              <a href={breeder.website} target="_blank" rel="noopener noreferrer">
-                                Visitar Site <ExternalLink className="ml-2 h-3 w-3" />
-                              </a>
-                            </Button>
-                          </div>
+                      {match.breed.breeders && match.breed.breeders.length > 0 ? (
+                        match.breed.breeders
+                          .filter((breeder) => breeder.active !== false) // Filtrar apenas criadores ativos
+                          .map((breeder, idx) => (
+                            <div key={idx} className="border border-gray-200 rounded-lg p-4">
+                              <h3 className="font-medium text-gray-800">{breeder.name}</h3>
+                              <p className="text-sm text-gray-600 mt-1">{breeder.location}</p>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {breeder.website && (
+                                  <Button variant="outline" size="sm" asChild className="border-gray-300 text-gray-700">
+                                    <a href={breeder.website} target="_blank" rel="noopener noreferrer">
+                                      Visitar Site <ExternalLink className="ml-2 h-3 w-3" />
+                                    </a>
+                                  </Button>
+                                )}
+                                {breeder.instagram && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    asChild
+                                    className="border-pink-200 text-pink-700 hover:bg-pink-50"
+                                  >
+                                    <a
+                                      href={`https://instagram.com/${breeder.instagram.replace("@", "")}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      Instagram{" "}
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="ml-2 h-3 w-3"
+                                      >
+                                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                                      </svg>
+                                    </a>
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                      ) : (
+                        <div className="text-center py-4 text-gray-500">
+                          Não temos informações de criadores para esta raça no momento.
                         </div>
-                      ))}
+                      )}
                     </div>
                   </TabsContent>
                 </div>

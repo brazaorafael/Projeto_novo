@@ -72,6 +72,14 @@ export function AdminNav() {
           </Link>
 
           <Link
+            href="/admin/breeders"
+            className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:text-amber-800 hover:bg-amber-50"
+          >
+            <Users className="mr-2 h-4 w-4" />
+            Criadores
+          </Link>
+
+          <Link
             href="/admin/system"
             className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:text-amber-800 hover:bg-amber-50"
           >

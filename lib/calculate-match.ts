@@ -1,9 +1,10 @@
-// Atualizar a função calculateMatch para incluir o nível de energia e preferência pelo Japanese Chin
+// Atualizar a função calculateMatch para corrigir a recomendação de cães pequenos/médios para guarda
 
 export function calculateMatch(answers, dogBreeds) {
   // Primeiro, filtrar as raças pelo porte e objetivo selecionados
   let filteredBreeds = [...dogBreeds]
 
+  // Aplicar filtro de porte
   if (answers.porte) {
     filteredBreeds = filteredBreeds.filter((breed) => {
       if (answers.porte === "pequeno" && breed.size.includes("Pequeno")) return true
@@ -14,13 +15,53 @@ export function calculateMatch(answers, dogBreeds) {
     })
   }
 
+  // Aplicar filtro de objetivo, com lógica especial para cães pequenos/médios para guarda
   if (answers.objetivo) {
-    filteredBreeds = filteredBreeds.filter((breed) => {
-      if (answers.objetivo === "companhia" && breed.purpose.includes("Companhia")) return true
-      if (answers.objetivo === "guarda" && breed.purpose.includes("Guarda")) return true
-      if (answers.objetivo === "esporte" && breed.purpose.includes("Esporte")) return true
-      return false
-    })
+    // Se o objetivo for guarda e o porte for pequeno ou médio, precisamos ser mais específicos
+    if (answers.objetivo === "guarda" && (answers.porte === "pequeno" || answers.porte === "medio")) {
+      // Filtrar apenas raças pequenas/médias que realmente são adequadas para guarda
+      filteredBreeds = filteredBreeds.filter((breed) => {
+        // Verificar se a raça tem "Guarda" como propósito principal
+        const isGuardDog = breed.purpose.includes("Guarda")
+
+        // Verificar se a raça tem características de cão de guarda
+        // (alta vigilância, latido de alerta, territorialidade)
+        const hasGuardTraits =
+          // Raças pequenas/médias conhecidas por serem bons cães de guarda
+          [
+            "Schnauzer",
+            "Bull Terrier",
+            "Dachshund",
+            "Jack Russell Terrier",
+            "Basenji",
+            "Fox Terrier",
+            "Spitz Alemão",
+            "Pinscher",
+          ].some((guardBreed) => breed.name.includes(guardBreed))
+
+        return isGuardDog || hasGuardTraits
+      })
+
+      // Se não encontrarmos raças adequadas, vamos incluir algumas raças maiores de guarda
+      // mas com penalidade na pontuação
+      if (filteredBreeds.length < 2) {
+        const guardDogs = dogBreeds.filter(
+          (breed) =>
+            breed.purpose.includes("Guarda") && (breed.size.includes("Grande") || breed.size.includes("Gigante")),
+        )
+
+        // Adicionar algumas raças maiores, mas não todas
+        filteredBreeds = [...filteredBreeds, ...guardDogs.slice(0, 3)]
+      }
+    } else {
+      // Para outros casos, aplicar o filtro normal
+      filteredBreeds = filteredBreeds.filter((breed) => {
+        if (answers.objetivo === "companhia" && breed.purpose.includes("Companhia")) return true
+        if (answers.objetivo === "guarda" && breed.purpose.includes("Guarda")) return true
+        if (answers.objetivo === "esporte" && breed.purpose.includes("Esporte")) return true
+        return false
+      })
+    }
   }
 
   // Se não houver raças que correspondam exatamente aos critérios, use todas as raças
@@ -232,6 +273,30 @@ export function calculateMatch(answers, dogBreeds) {
       // Adicionar aviso se os cuidados necessários forem maiores que o disponível
       if (breed.groomingNeeds > careLevel + 2) {
         warnings.push("Esta raça requer mais cuidados com a pelagem do que você indicou estar disposto a proporcionar.")
+      }
+    }
+
+    // Ajustes específicos para cães pequenos/médios para guarda
+    if (answers.objetivo === "guarda" && (breed.size.includes("Pequeno") || breed.size.includes("Médio"))) {
+      // Verificar se a raça realmente é adequada para guarda
+      const isGuardDog = breed.purpose.includes("Guarda")
+      const isKnownGuardBreed = [
+        "Schnauzer",
+        "Bull Terrier",
+        "Dachshund",
+        "Jack Russell Terrier",
+        "Basenji",
+        "Fox Terrier",
+        "Spitz Alemão",
+        "Pinscher",
+      ].some((guardBreed) => breed.name.includes(guardBreed))
+
+      if (isGuardDog || isKnownGuardBreed) {
+        // Bônus para raças pequenas/médias que são boas para guarda
+        score += 15
+      } else {
+        // Penalidade para raças pequenas/médias que não são adequadas para guarda
+        score -= 20
       }
     }
 
