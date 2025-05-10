@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import Image from "next/image"
 import { ArrowLeft, ExternalLink, AlertTriangle, Check, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -125,23 +124,12 @@ export default function Resultados() {
               <div className="md:grid md:grid-cols-3">
                 <div className="relative h-64 md:h-full">
                   <div className="w-full h-full relative">
-                    {match.breed.image.startsWith("/") ? (
-                      // Imagem local
-                      <Image
-                        src={match.breed.image || "/placeholder.svg"}
-                        alt={match.breed.name}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    ) : (
-                      // Imagem externa (fallback)
-                      <img
-                        src={match.breed.image || "/placeholder.svg"}
-                        alt={match.breed.name}
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                    )}
+                    {/* Usar img padrão em vez do componente Image do Next.js */}
+                    <img
+                      src={match.breed.image || "/placeholder.svg"}
+                      alt={match.breed.name}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
                     <h2 className="text-white text-xl font-bold">{match.breed.name}</h2>
